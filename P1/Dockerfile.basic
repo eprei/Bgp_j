@@ -1,0 +1,29 @@
+# Image Docker basique basée sur Alpine avec busybox
+# Cette image sera utilisée pour les équipements réseau simples dans GNS3
+
+FROM alpine:latest
+
+# Installation de busybox et outils réseau essentiels
+RUN apk add --no-cache \
+    busybox \
+    iproute2 \
+    iputils \
+    tcpdump \
+    net-tools \
+    bash
+
+# Configuration pour GNS3
+# Les interfaces réseau seront configurées dynamiquement par GNS3
+# Aucune adresse IP n'est configurée par défaut
+
+# Création d'un script de démarrage
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'echo "Container basique démarré"' >> /start.sh && \
+    echo 'echo "Interfaces réseau disponibles:"' >> /start.sh && \
+    echo 'ip link show' >> /start.sh && \
+    echo 'exec /bin/sh' >> /start.sh && \
+    chmod +x /start.sh
+
+# Point d'entrée
+ENTRYPOINT ["/start.sh"]
+

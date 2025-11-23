@@ -1,0 +1,66 @@
+# Image Docker pour routeur avec services de routage
+# Basée sur Ubuntu pour une meilleure compatibilité avec quagga
+# Contient: BGPD, OSPFD, IS-IS, et busybox
+
+FROM ubuntu:22.04
+
+# Éviter les prompts interactifs
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Installation de Quagga et outils essentiels
+RUN apt-get update && apt-get install -y \
+    quagga \
+    busybox \
+    iproute2 \
+    iputils-ping \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configuration de quagga
+# Création des répertoires de configuration
+RUN mkdir -p /etc/quagga /var/log/quagga && \
+    chown -R quagga:quagga /etc/quagga /var/log/quagga && \
+    chmod 755 /etc/quagga
+
+# Création des configurations Quagga minimales
+RUN printf "hostname zebra\npassword zebra\nenable password zebra\nlog file /var/log/quagga/zebra.log\n" > /etc/quagga/zebra.conf && \
+    printf "hostname bgpd\npassword bgpd\nenable password bgpd\nlog file /var/log/quagga/bgpd.log\n" > /etc/quagga/bgpd.conf && \
+    printf "hostname ospfd\npassword ospfd\nenable password ospfd\nlog file /var/log/quagga/ospfd.log\n" > /etc/quagga/ospfd.conf && \
+    printf "hostname isisd\npassword isisd\nenable password isisd\nlog file /var/log/quagga/isisd.log\n" > /etc/quagga/isisd.conf && \
+    chown quagga:quagga /etc/quagga/*.conf && \
+    chmod 640 /etc/quagga/*.conf
+
+# Création d'un script de démarrage pour Quagga
+RUN echo '#!/bin/sh\n\
+# Démarrage des services Quagga\n\
+echo "Démarrage des services Quagga..."\n\
+\n\
+# Démarrer zebra\n\
+/usr/lib/quagga/zebra -d -A 127.0.0.1 -f /etc/quagga/zebra.conf\n\
+\n\
+# Démarrer bgpd\n\
+/usr/lib/quagga/bgpd -d -A 127.0.0.1 -f /etc/quagga/bgpd.conf\n\
+\n\
+# Démarrer ospfd\n\
+/usr/lib/quagga/ospfd -d -A 127.0.0.1 -f /etc/quagga/ospfd.conf\n\
+\n\
+# Démarrer isisd\n\
+/usr/lib/quagga/isisd -d -A 127.0.0.1 -f /etc/quagga/isisd.conf\n\
+\n\
+# Afficher les interfaces\n\
+echo "Interfaces disponibles:"\n\
+ip link show\n\
+\n\
+# Garder le conteneur actif\n\
+tail -f /dev/null\n\
+' > /start-quagga.sh && chmod +x /start-quagga.sh
+
+# Exposition des ports pour les services de routage
+# 2601: zebra
+# 2604: bgpd
+# 2606: ospfd
+# 2608: isisd
+EXPOSE 2601 2604 2606 2608
+
+# Point d'entrée - démarrage direct des services Quagga
+CMD ["/start-quagga.sh"]
+

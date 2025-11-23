@@ -1,0 +1,12 @@
+! Configuration OSPF Daemon (Quagga)
+! Configuration minimale - à compléter selon vos besoins
+
+hostname ospfd
+password ospfd
+enable password ospfd
+log file /var/log/quagga/ospfd.log
+
+! Exemple de configuration OSPF (à décommenter et adapter):
+! router ospf
+!   ospf router-id 1.1.1.1
+!   network 192.168.1.0/24 area 0

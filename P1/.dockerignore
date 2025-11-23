@@ -1,0 +1,9 @@
+# Fichiers à ignorer lors de la construction Docker
+README.md
+*.md
+.git
+.gitignore
+*.zip
+*.tar
+config/*.example
+
